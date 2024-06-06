@@ -24,59 +24,72 @@
         BoxGeometry,
         MeshRenderer,
         DirectLight,
+        PointLight,
         HoverCameraController,
-        AtmosphericComponent
+        AtmosphericComponent,
+        Color,
+        SolidColorSky,
+        SkyRenderer
     } from '@orillusion/core';
 
+    // 初始化渲染引擎
+    await Engine3D.init()
+    // create new scene as root node
+    let scene = new Scene3D()
 
-    await Engine3D.init();
 
-    // 新建场景
-    let scene = new Scene3D();
-    // 添加天空盒
-    let sky = scene.addComponent(AtmosphericComponent);
-    // 新建相机
-    let cameraObj =  new Object3D();
-    let camera = cameraObj.addComponent(Camera3D);
-    // 设置相机视角
-    camera.perspective(60, window.innerWidth / window.innerHeight, 1, 5000.0);
-    // 设置相机控制器
-    let controller = camera.object3D.addComponent(HoverCameraController);
-    controller.setCamera(0, 0, 25);
-    // 添加相机节点
-    scene.addChild(cameraObj);
+    // 创建一个纯色贴图
+    let colorSky = new SolidColorSky(new Color(0, 0, 0, 1))
+    // 添加 SkyRenderer 组件，然后设置 map 贴图
+    let sky = scene.addComponent(SkyRenderer);
+    sky.map = colorSky;
 
-    // 新建光照
-    let light = new Object3D();
-    // 添加直接光组件
-    let component = light.addComponent(DirectLight);
-    // 调整光照参数
-    light.rotationX = 45;
-    light.rotationY = 30;
-    component.intensity = 2;
-    // 添加光照对象
+    // 同时设置单色环境光
+    scene.envMap = colorSky;
+
+
+    // 创建相机
+    let cameraObj = new Object3D()
+    let camera = cameraObj.addComponent(Camera3D)
+    camera.perspective(60, Engine3D.aspect, 1, 5000.0)
+    let controller = cameraObj.addComponent(HoverCameraController)
+    controller.setCamera(0, -5, 5)
+    scene.addChild(cameraObj)
+
+    // 平行光源
+    let light = new Object3D()
+    light.rotationX = 90;
+    let dl = light.addComponent(DirectLight);
+    dl.lightColor = new Color(1.0, 1.0, 1.0, 1.0);
+    dl.intensity = 60;
     scene.addChild(light);
 
-    // 新建对象
-    const obj = new Object3D();
-    // 为对象添 MeshRenderer
-    let mr = obj.addComponent(MeshRenderer);
-    // 设置几何体
-    mr.geometry = new BoxGeometry(5, 5, 5);
-    // 设置材质
-    mr.material = new LitMaterial();
 
-    // 往场景内添加物体
-    scene.addChild(obj);
+    // 点光源
+    // let light = new Object3D()
+    // light.x = 0;                                            // 从上往下的点光源
+    // light.y = 20;
+    // let pointLight = light.addComponent(PointLight)          // 点光源
+    // pointLight.lightColor = new Color(1.0, 1.0, 1.0, 1.0)    // 光照颜色
+    // pointLight.range = 30;                                   // 光照最远距离
+    // pointLight.intensity = 40                               // 光照强度
+    // scene.addChild(light);
+   
+    // 加载 gltf 文件
+    let data = await Engine3D.res.loadGltf('scene.gltf');
+    data.rotationX = -90;
+    data.rotationY = 90;
+    scene.addChild(data);
 
-    // 创建View3D对象
-    let view = new View3D();
-    // 指定渲染的场景
-    view.scene = scene;
-    // 指定使用的相机
-    view.camera = camera;
-    // 开始渲染
-    Engine3D.startRenderView(view);
+
+
+    let view = new View3D()
+    view.scene = scene
+    view.camera = camera
+
+    // start render
+    Engine3D.startRenderView(view)
+
 </script>
 </body>
 
