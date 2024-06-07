@@ -9,7 +9,7 @@
 <script type="importmap">
     {
         "imports": {
-        "@orillusion/core": "https://cdn.orillusion.com/orillusion.es.js"
+        "@orillusion/core": "https://unpkg.com/@orillusion/core/dist/orillusion.es.js"
         }
     }
 </script>
@@ -23,20 +23,26 @@
         LitMaterial,
         BoxGeometry,
         MeshRenderer,
+        PlaneGeometry,
         DirectLight,
         PointLight,
+        SpotLight,
         HoverCameraController,
         AtmosphericComponent,
         Color,
         SolidColorSky,
-        SkyRenderer
+        SkyRenderer,
+        PostProcessingComponent,
+        BloomPost,
+        GlobalIlluminationComponent,
+        Vector3 
     } from '@orillusion/core';
 
     // 初始化渲染引擎
     await Engine3D.init()
+
     // create new scene as root node
     let scene = new Scene3D()
-
 
     // 创建一个纯色贴图
     let colorSky = new SolidColorSky(new Color(0, 0, 0, 1))
@@ -59,11 +65,13 @@
     // 平行光源
     let light = new Object3D()
     light.rotationX = 90;
+    light.x = 10
     let dl = light.addComponent(DirectLight);
     dl.lightColor = new Color(1.0, 1.0, 1.0, 1.0);
-    dl.intensity = 60;
+    dl.castShadow = true
+    dl.intensity = 40;
     scene.addChild(light);
-
+    console.log('平行光方向向量', dl.direction)                 // z轴数值很大,假设是从太阳照射的
 
     // 点光源
     // let light = new Object3D()
@@ -74,21 +82,62 @@
     // pointLight.range = 30;                                   // 光照最远距离
     // pointLight.intensity = 40                               // 光照强度
     // scene.addChild(light);
-   
+
+    // 聚光灯光源
+    // let spotLightObj = new Object3D();
+    // spotLightObj.y = 100;
+    // spotLightObj.rotationX= 90                                 // 从上往下的聚光灯
+    // scene.addChild(spotLightObj);
+    // let spotLight = spotLightObj.addComponent(SpotLight);
+    // spotLight.lightColor = new Color(1.0, 1.0, 1.0, 1.0);
+    // spotLight.intensity = 20;
+    // spotLight.range = 150;
+
+
+    // 天花板灯
+    let ceilingLight = new Object3D();
+    ceilingLight.y = 3; 
+    ceilingLight.rotationX = 180;                           // 设置平面为朝下
+    let cl = ceilingLight.addComponent(MeshRenderer);
+    cl.geometry = new PlaneGeometry(9, 5);            
+    let clMat = new LitMaterial()
+    clMat.emissiveColor = new Color(1, 1, 1, 1);
+    clMat.emissiveIntensity = 1.05;
+    cl.material = clMat
+    scene.addChild(ceilingLight);
+
+
+    // 地板平面
+    let floor = new Object3D();
+    floor.y = -1;
+    let mr = floor.addComponent(MeshRenderer);
+    mr.geometry = new PlaneGeometry(40, 40);
+    let mat = new LitMaterial()
+    mat.baseColor = new Color(0, 0, 0, 1);
+    mr.material = mat
+    scene.addChild(floor);
+
     // 加载 gltf 文件
-    let data = await Engine3D.res.loadGltf('scene.gltf');
-    data.rotationX = -90;
-    data.rotationY = 90;
-    scene.addChild(data);
+    let car = await Engine3D.res.loadGltf('./mercedes-benz_amg_cls/scene.gltf');
+    car.y = -1
+    car.rotationX = -90;
+    car.rotationY = 90;
+    scene.addChild(car);
 
 
+    // 初始化全局光照组件
+    // let probeObj = new Object3D();
+    // probeObj.addComponent(GlobalIlluminationComponent);
+    // scene.addChild(probeObj);
 
     let view = new View3D()
     view.scene = scene
     view.camera = camera
-
-    // start render
     Engine3D.startRenderView(view)
+
+     // 添加 BloomPost
+     let postProcessing = scene.addComponent(PostProcessingComponent);
+    postProcessing.addPost(BloomPost);
 
 </script>
 </body>
