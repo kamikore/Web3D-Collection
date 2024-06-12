@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+<body>
+    <canvas id="canvas"></canvas>
+</body>
+
+<script type="importmap">
+    {
+        "imports": {
+          "three": "https://cdn.jsdelivr.net/npm/three@0.165.0/build/three.module.js",
+          "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.165.0/examples/jsm/"
+        }
+    }
+</script>
+
+
+<script type="module">
+    import * as THREE from 'three';
+
+    const canvas = document.querySelector('#canvas');
+    // 创建渲染器
+    const renderer = new THREE.WebGLRenderer({antialias: true, canvas});
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    // 创建场景
+    const scene = new THREE.Scene();
+    scene.background = new THREE.Color('gray');
+    // 创建相机
+    const camera = new THREE.PerspectiveCamera(50, 2, 0.1, 100);
+    camera.position.set( 0, 10, 20 );
+    camera.lookAt(0, 0, 0);
+
+
+    // 棋盘平面
+    {
+        const planeSize = 40;
+
+    const loader = new THREE.TextureLoader();
+    const texture = loader.load( './checker.png' );
+    texture.wrapS = THREE.RepeatWrapping;
+    texture.wrapT = THREE.RepeatWrapping;
+    texture.magFilter = THREE.NearestFilter;
+    texture.colorSpace = THREE.SRGBColorSpace;
+    const repeats = planeSize / 2;
+    texture.repeat.set( repeats, repeats );
+
+    const planeGeo = new THREE.PlaneGeometry( planeSize, planeSize );
+    const planeMat = new THREE.MeshBasicMaterial( {
+        map: texture,
+        side: THREE.DoubleSide,
+    } );
+    planeMat.color.setRGB( 1.5, 1.5, 1.5);
+    const mesh = new THREE.Mesh( planeGeo, planeMat );
+    mesh.rotation.x = Math.PI * - .5;
+    scene.add( mesh );
+    }
+
+    // 光照
+    const light = new THREE.DirectionalLight('#fff', 5);
+    light.position.set( 0, 10, 5 );
+    light.target.position.set( - 5, 0, 0 );
+    scene.add(light);
+    scene.add(light.target);	
+    const helper = new THREE.DirectionalLightHelper(light, 10);
+    scene.add(helper);
+
+
+    function render( time ) {
+        time *= 0.001; // convert to seconds
+        resizeRendererToDisplaySize( renderer );
+
+        const canvas = renderer.domElement;
+        camera.aspect = canvas.clientWidth / canvas.clientHeight;
+        camera.updateProjectionMatrix();
+
+        renderer.render(scene, camera);
+
+    }
+    
+    requestAnimationFrame( render )
+
+
+    function resizeRendererToDisplaySize( renderer ) {
+        const canvas = renderer.domElement;
+        const width = canvas.clientWidth;
+        const height = canvas.clientHeight;
+        const needResize = canvas.width !== width || canvas.height !== height;
+        if ( needResize ) {
+            renderer.setSize( width, height, false );
+        }
+        return needResize;
+    }
+
+</script>
+
+<style>
+body {
+    margin: 0;
+    padding: 0;
+}
+
+#canvas {
+    width: 100%;
+    height: 100%;
+    display: block;
+}
+
+
+</style>
+
+
+</html>

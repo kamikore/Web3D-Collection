@@ -28,6 +28,7 @@
         PointLight,
         SpotLight,
         HoverCameraController,
+        OrbitController,
         AtmosphericComponent,
         Color,
         SolidColorSky,
@@ -35,11 +36,20 @@
         PostProcessingComponent,
         BloomPost,
         GlobalIlluminationComponent,
-        Vector3 
+        Vector3,
+        Vector4,
+        KelvinUtil 
     } from '@orillusion/core';
 
+    //配置Global Irrandiance 参数
+    Engine3D.setting.shadow.autoUpdate = true
+    Engine3D.setting.shadow.shadowBound = 10
+    Engine3D.setting.shadow.type = 'HARD'
+
     // 初始化渲染引擎
-    await Engine3D.init()
+    await Engine3D.init({
+        canvasConfig: { devicePixelRatio: 1 }
+    })
 
     // create new scene as root node
     let scene = new Scene3D()
@@ -54,12 +64,14 @@
     scene.envMap = colorSky;
 
 
-    // 创建相机
+    // 创建轨道相机
     let cameraObj = new Object3D()
     let camera = cameraObj.addComponent(Camera3D)
     camera.perspective(60, Engine3D.aspect, 1, 5000.0)
-    let controller = cameraObj.addComponent(HoverCameraController)
-    controller.setCamera(0, -5, 5)
+    let controller = cameraObj.addComponent(OrbitController)
+    controller.minPolarAngle = Math.PI / 2.5;       // 仰角最小值，单位为弧度
+    controller.maxPolarAngle = Math.PI / 2 ;        // 仰角最大值
+    cameraObj.localPosition.set(0, 0, 5)
     scene.addChild(cameraObj)
 
     // 平行光源
@@ -67,31 +79,11 @@
     light.rotationX = 90;
     light.x = 10
     let dl = light.addComponent(DirectLight);
-    dl.lightColor = new Color(1.0, 1.0, 1.0, 1.0);
+    dl.lightColor = new Color(1, 1, 1, 1)
     dl.castShadow = true
     dl.intensity = 40;
     scene.addChild(light);
     console.log('平行光方向向量', dl.direction)                 // z轴数值很大,假设是从太阳照射的
-
-    // 点光源
-    // let light = new Object3D()
-    // light.x = 0;                                            // 从上往下的点光源
-    // light.y = 20;
-    // let pointLight = light.addComponent(PointLight)          // 点光源
-    // pointLight.lightColor = new Color(1.0, 1.0, 1.0, 1.0)    // 光照颜色
-    // pointLight.range = 30;                                   // 光照最远距离
-    // pointLight.intensity = 40                               // 光照强度
-    // scene.addChild(light);
-
-    // 聚光灯光源
-    // let spotLightObj = new Object3D();
-    // spotLightObj.y = 100;
-    // spotLightObj.rotationX= 90                                 // 从上往下的聚光灯
-    // scene.addChild(spotLightObj);
-    // let spotLight = spotLightObj.addComponent(SpotLight);
-    // spotLight.lightColor = new Color(1.0, 1.0, 1.0, 1.0);
-    // spotLight.intensity = 20;
-    // spotLight.range = 150;
 
 
     // 天花板灯
@@ -113,9 +105,10 @@
     let mr = floor.addComponent(MeshRenderer);
     mr.geometry = new PlaneGeometry(40, 40);
     let mat = new LitMaterial()
-    mat.baseColor = new Color(0, 0, 0, 1);
+    // mat.baseColor = new Color(0, 0, 0, 1);
     mr.material = mat
     scene.addChild(floor);
+
 
     // 加载 gltf 文件
     let car = await Engine3D.res.loadGltf('./mercedes-benz_amg_cls/scene.gltf');
@@ -125,19 +118,19 @@
     scene.addChild(car);
 
 
-    // 初始化全局光照组件
-    // let probeObj = new Object3D();
-    // probeObj.addComponent(GlobalIlluminationComponent);
-    // scene.addChild(probeObj);
-
     let view = new View3D()
     view.scene = scene
     view.camera = camera
     Engine3D.startRenderView(view)
 
-     // 添加 BloomPost
+    // 添加 BloomPost
      let postProcessing = scene.addComponent(PostProcessingComponent);
     postProcessing.addPost(BloomPost);
+
+    // 初始化全局光照组件
+    // let probeObj = new Object3D()
+    // let GI = probeObj.addComponent(GlobalIlluminationComponent)
+    // scene.addChild(probeObj)
 
 </script>
 </body>
