@@ -224,20 +224,16 @@
     const infoElem = document.querySelector( '#info' );
 
     function render( time ) {
-
       time *= 0.001;
 
       if ( resizeRendererToDisplaySize( renderer ) ) {
-
         const canvas = renderer.domElement;
         cameras.forEach( ( cameraInfo ) => {
-
           const camera = cameraInfo.cam;
+          // 重新设置视口比例
           camera.aspect = canvas.clientWidth / canvas.clientHeight;
           camera.updateProjectionMatrix();
-
         } );
-
       }
 
       // move target
@@ -267,10 +263,8 @@
       targetCameraPivot.lookAt( targetPosition );
 
       wheelMeshes.forEach( ( obj ) => {
-
         obj.rotation.x = time * 3;
-
-      } );
+      });
 
       const camera = cameras[ time * .25 % cameras.length | 0 ];
       infoElem.textContent = camera.desc;
