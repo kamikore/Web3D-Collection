@@ -6,6 +6,8 @@
     <title>Document</title>
 </head>
 <body>
+    <canvas id="canvas"></canvas>
+
     <script type="importmap">
         {
             "imports": {
@@ -18,49 +20,129 @@
     <script type="module">
         import * as THREE from 'three';
 
+        const canvas = document.querySelector( '#canvas' );
+        const renderer = new THREE.WebGLRenderer( { antialias: true, canvas } );
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.shadowMap.enabled = true;
+        const scene = new THREE.Scene();
+        const camera = new THREE.PerspectiveCamera(50, 2, 0.1, 100);
+        camera.position.set(0, 5, 10);
+        camera.lookAt(0, 0, 0);
+
         // 创建渲染目标
         const rtWidth = 512;
         const rtHeight = 512;
-        const renderTarget = new THREE.WebGLRenderTarget(rtWidth, rtHeight);
+        // const renderTarget = new THREE.WebGLRenderTarget(rtWidth, rtHeight);
+        const renderTarget = new THREE.WebGLRenderTarget(rtWidth, rtHeight, {
+          depthBuffer: false,
+          stencilBuffer: false,
+        });
 
-        // 创建Camera
-        const rtFov = 75;
+        // 创建渲染目标Camera
+        const rtFov = 50;
         const rtAspect = rtWidth / rtHeight;
         const rtNear = 0.1;
-        const rtFar = 5;
+        const rtFar = 100;
         const rtCamera = new THREE.PerspectiveCamera(rtFov, rtAspect, rtNear, rtFar);
-        rtCamera.position.z = 2;
+        rtCamera.position.set(0, 5, 8);
+        rtCamera.lookAt(0, 0, 0);
 
-        // 创建Scene
+        // 创建渲染目标Scene
         const rtScene = new THREE.Scene();
         rtScene.background = new THREE.Color('red');
 
         // 创建一个平面
-        const panel = new THREE.Mesh()
+        const mirrorGeometry = new THREE.PlaneGeometry( 5, 5 );
+        const mirrorMaterial = new THREE.MeshPhongMaterial( { 
+          color: 0xffffff, 
+          map: renderTarget.texture
+        } );
+        const mirror = new THREE.Mesh( mirrorGeometry, mirrorMaterial );
+        mirror.position.x = -2;
+        mirror.rotation.x = -Math.PI / 6;
+        mirror.rotation.y = Math.PI / 6;
+        mirror.receiveShadow = true;
+        scene.add(mirror)
+
+        // 场景物体
+        const cubeGeometry = new THREE.BoxGeometry( 1, 1, 1 );
+        const cubeMaterial = new THREE.MeshPhongMaterial( { color: 0x00ff00 } );
+        const cube = new THREE.Mesh( cubeGeometry, cubeMaterial );
+        cube.position.x = 2;
+        scene.add(cube);
+
+        // 场景光照
+        const light = new THREE.DirectionalLight( 0xffffff, 3 );
+        light.position.set( 8, 3, -2 );
+        light.target.position.set(0, 0, -2);
+        light.castShadow = true;
+        scene.add( light );
+        const lightHelper = new THREE.DirectionalLightHelper( light );
+        scene.add( lightHelper );
 
 
+        // 镜面内物体
+        const rtCube = new THREE.Mesh( cubeGeometry, cubeMaterial );
+        rtScene.add(rtCube);
+
+        // 镜面内光照
+        const rtLight = new THREE.DirectionalLight( 0xffffff, 3 );
+        rtLight.position.set( 8, 3, -2 );
+        rtLight.target.position.set(0, 0, -2);
+        rtScene.add( rtLight );
+      
+
+        requestAnimationFrame( render );
+
+        function render( time ) {
+          time *= 0.001;
+
+          if ( resizeRendererToDisplaySize( renderer ) ) {
+            const canvas = renderer.domElement;
+            camera.aspect = canvas.clientWidth / canvas.clientHeight;
+            camera.updateProjectionMatrix();
+          }
+
+          cube.rotation.x = time;
+          cube.rotation.y = time;
+          rtCube.rotation.x = time;
+          rtCube.rotation.y = time;
+
+          renderer.setRenderTarget( renderTarget );
+          renderer.render( rtScene, rtCamera );
+          renderer.setRenderTarget( null );
+
+          renderer.render( scene, camera );
+          requestAnimationFrame( render );
+        }
 
 
+        function resizeRendererToDisplaySize( renderer ) {
+          const canvas = renderer.domElement;
+          const width = canvas.clientWidth;
+          const height = canvas.clientHeight;
+          const needResize = canvas.width !== width || canvas.height !== height;
+
+          if ( needResize ) {
+            renderer.setSize( width, height, false );
+          }
+          return needResize;
+        }
     </script>
 
 </body>
 
 <style>
-    #canvas {
+  body {
+      margin: 0;
+      padding: 0;
+  }
+  
+  #canvas {
       width: 100%;
       height: 100%;
       display: block;
-    }
-  
-    #info {
-      position: absolute;
-      left: 1em;
-      top: 1em;
-      background: rgba(0,0,0,.8);
-      padding: .5em;
-      color: white;
-      font-family: monospace;
-    }
+  }
   
   
   </style>
